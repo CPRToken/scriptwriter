@@ -27,10 +27,10 @@ app.post('/', async (req, res) => {
     try {
       const prompt = req.body.prompt;
       const temperature = req.body.temperature || 0.5;  
-      const max_tokens = req.body.max_tokens || 100;
+      const max_tokens = req.body.max_tokens || 1000;
 
       const response = await openai.createCompletion({
-        model: 'gpt-3.5-turbo',
+         model: 'text-davinci-003',
         prompt: prompt,
         temperature: parseFloat(temperature),
         max_tokens: parseInt(max_tokens),
