@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Script Writer</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+   
+    
+    <style>
+
+@font-face {
+  font-family: 'Sarabun';
+  src: url('sarabun.woff2') format('woff2');
+}
+
+
+
+        body {
+            font-family: Arial, sans-serif, 'Sarabun'  ;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+        }
+
+        label {
+            margin-bottom: 15px;
+            text-align: center;
+            display: block;
+        }
+
+        textarea {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border-radius: 3px;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border-radius: 3px;
+        }
+
+        textarea {
+            height: 120px;
+            width: 360px;
+            border-radius: 3px;
+        }
+
+        select {
+            padding: 6px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            min-width: 250px;
+            border-radius: 3px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .response-section {
+            margin-top: 30px;
+        }
+
+        #response {
+            padding: 10px;
+            font-size: 16px;
+            max-width: 600px;
+            min-width: 300px;
+            margin: 0 auto;
+            background: #efefef;
+            border: solid 1px #fff;
+            border-radius: 3px;
+            overflow-y: scroll;
+        }
+
+        .slider {
+            width: 250px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        #duration_handle,
+        #max_tokens_handle,
+        #temperature_handle {
+            width: 3em;
+            height: 1.6em;
+            top: 50%;
+            margin-top: -.8em;
+            text-align: center;
+            line-height: 1.6em;
+        }
+
+        #loader {
+    display: none;
+    position: fixed;
+  z-index: 999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+#loader img {
+  margin-top: 10%;
+}
+
+#radio {
+    display: inline-block;
+   
+    }
+
+
+    </style>
+
+    <script>
+         function generatePrompt() {
+                 var prompt = 'write me a[genre][theme] theme, [style]with [tempo] with a duration of [duration], [language] ';
+            var genre = $('#genre').val();
+            var theme = $('#theme').val();
+            var style = $('#style').val();
+            var tempo = $('#tempo').val();
+            var language = $('#language').val();
+            var duration = $('#duration').slider('value');
+
+            prompt = prompt.replace('[genre]', genre !== '' ? ' ' + genre + ' screenplay ' : ' song ');
+
+            prompt = prompt.replace('[theme]', theme !== '' ? 'with ' + theme + ' ' : '');
+
+            prompt = prompt.replace('[style]', style !== '' ? ' in a ' + style + ' style, ' : '');
+
+            prompt = prompt.replace('[tempo]', tempo !== '' ? ' main ' + tempo + ' character(s) ' : '');
+
+            prompt = prompt.replace('[language]', language !== '' ? ' and translate it into ' + language + ' . ' : '');
+
+            prompt = prompt.replace('[duration]', duration + ' minutes');
+
+            $('#prompt').val(prompt.replaceAll('  ', ' '));
+        }
+
+        $(document).ready(function () {
+            $('#genre,#theme,#style,#tempo,#language').change(generatePrompt);
+
+
+          
+
+            var duration_handle = $("#duration_handle");
+            $("#duration").slider({
+                min: 30,
+                max: 90,
+                value: 220,
+                step: 5,
+                create: function () {
+                    duration_handle.text($(this).slider('value'));
+                },
+                slide: function (event, ui) {
+                    duration_handle.text(ui.value);
+                }
+            });
+          
+          
+          
+          
+            var maxTokensHandle = $("#max_tokens_handle");
+            $("#max_tokens").slider({
+                min: 100,
+                max: 2048,
+                value: 2048,
+                step: 2,
+                create: function () {
+                    maxTokensHandle.text($(this).slider('value'));
+                },
+                slide: function (event, ui) {
+                    maxTokensHandle.text(ui.value);
+                }
+            });
+
+            var temperatureHandle = $("#temperature_handle");
+            $("#temperature").slider({
+                min: 0,
+                max: 1,
+                value: 0.5,
+                step: 0.1,
+                create: function () {
+                    temperatureHandle.text($(this).slider('value'));
+                },
+                slide: function (event, ui) {
+                    temperatureHandle.text(ui.value);
+                }
+            });
+
+     
+
+
+
+            $("#duration").slider({
+                change: generatePrompt
+            });
+
+            $('form').submit(function (event) {
+                event.preventDefault();
+
+                // Show the loader
+                $('#loader').show();
+ 
+
+
+                var prompt = $('#prompt').val();
+                var max_tokens = $('#max_tokens').slider('value');
+                var temperature = $('#temperature').slider('value');
+
+      
+                
+                $.ajax({
+  type: 'POST',
+  url: 'http://localhost:5000/',
+  contentType: 'application/json',
+  data: JSON.stringify({
+    prompt: prompt,
+    model: 'text-davinci-003',
+    temperature: parseFloat(temperature),
+    max_tokens: 2408,
+    top_p: 1,
+    frequency_penalty: 0.2,
+    presence_penalty: 0
+  }),
+  success: function(response) {
+
+ // Hide the loader
+ $('#loader').hide();
+
+
+    $('#response').html(response.result.replace(/\n/g, '<br />'));
+
+   
+}
+                });
+            });
+       
+		
+	
+
+		
+		 });
+    </script>
+</head>
+<body>
+    <form>
+        <label for="max_tokens">Genre</label>
+        <div class="form-section">
+            <select id="genre" name="genre">
+                <option></option>
+                <option>action</option>
+                <option>thriller</option>
+                <option>drama</option>
+                <option>comedy</option>
+                <option>Sci-Fi</option>
+                <option>adventure</option>
+                              <option>Rom-Com</option>
+                <option>Fantasy</option>
+                <option>Horror</option>
+                <option>Porno</option>
+            </select>
+        </div>
+
+        <label for="max_tokens">Theme</label>
+        <div class="form-section">
+            <select id="theme" name="theme">
+                <option></option>
+                <option value="coming_of_age">coming of Age</option>
+                <option value="family">family</option>
+                <option value="friendship">friendship</option>
+                <option value="love">love</option>
+                <option value="betrayal">betrayal</option>
+                <option value="revenge">Revenge</option>
+                <option value="redemption">Redemption</option>
+                <option value="sacrifice">Sacrifice</option>
+                <option value="survival">Survival</option>
+                <option value="war">War</option>
+                <option value="tragedy">Tragedy</option>
+                <option value="hope">Hope</option>
+                <option value="justice">Justice</option>
+
+              
+            </select>
+        </div>
+
+
+        <label for="max_tokens">Style</label>
+        <div class="form-section">
+            <select id="style" name="style">
+                <option></option>
+                <option>Sad</option>
+                <option>Nostalgic</option>
+                <option>Joyful</option>
+                <option>Rape</option>
+                <option>Horny</option>
+                <option>Perky</option>
+                <option>Angry</option>
+                <option>Hearty</option>
+                <option>Joyful</option>
+                <option>Inspirational</option>
+                <option value="anxious">Anxious</option>
+                <option value="excited">Excited</option>
+                <option value="bored">Bored</option>
+                <option value="relaxed">Relaxed</option>
+                <option value="inspired">Inspired</option>
+                <option value="depressed">Depressed</option>
+                <option value="romantic">Romantic</option>
+            
+                <option>Perky</option>
+            </select>
+        </div>
+
+        <label for="max_tokens">Main characters</label>
+        <div class="form-section">
+            <select id="tempo" name="tempo">
+                <option></option>
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+            </select>
+        </div>
+
+
+      
+
+
+        <label for="max_tokens">Language</label>
+        <div class="form-section">
+            <select id="language" name="language">
+                <option></option>
+                <option>English</option>
+                <option>Spanish</option>
+                <option>Portuguese</option>
+                <option>Italian</option>
+                <option>Thai</option>
+            </select>
+        </div>
+
+
+
+
+        <label for="max_tokens">Duration (minutes)</label>
+        <div class="form-section">
+            <div id="duration" name="duration" class="slider">
+                <div id="duration_handle" class="ui-slider-handle"></div>
+            </div>
+        </div>
+
+
+
+       
+        
+
+        <div class="form-section">
+            <label for="temperature">Creativity</label>
+            <div id="temperature" name="temperature" class="slider">
+                <div id="temperature_handle" class="ui-slider-handle"></div>
+            </div>
+        </div>
+
+        <label for="prompt">Prompt</label>
+        <textarea type="text" id="prompt" name="prompt"></textarea>
+
+        <div>
+            <button type="submit" id="submit">Submit</button>
+        </div>
+    </form>
+
+      <script src="main.js"></script>
+            <section class="response-section">
+        <label for="response">Response</label>
+        <div id="response">
+
+        </div>
+        
+        <div id="loader">
+            <img src="/loader.gif" alt="Loading...">
+        </div>
+      </section>
+</body>
+</html>
