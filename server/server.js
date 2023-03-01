@@ -19,7 +19,7 @@ app.use(express.json());
 
 app.get('/', async (req, res) => {
     res.status(200).send({
-        message:'Its working asshole',
+        message:'Its working and you are on NFP',
     })
 });
 
